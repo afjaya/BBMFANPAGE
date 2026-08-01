@@ -4,7 +4,7 @@ on:
   schedule:
     # ⏱️ Otomatis berjalan setiap 4 jam sekali
     - cron: "0 */4 * * *"
-  workflow_dispatch: # Tombol untuk "Run manual" dari GitHub UI
+  workflow_dispatch:
 
 jobs:
   run-autofeed:
@@ -28,7 +28,7 @@ jobs:
         env:
           FIREBASE_KEY_JSON: ${{ secrets.FIREBASE_KEY_JSON }}
         run: |
-          echo "$FIREBASE_KEY_JSON" > firebase-key.json
+          echo "$FIREBASE_KEY_JSON" | base64 -d > firebase-key.json
 
       - name: 🚀 Run AI Autopilot Feeder
         env:
