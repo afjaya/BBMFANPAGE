@@ -1,0 +1,6 @@
+{
+  "name": "Bang Bro Media Fanpage",
+  "description": "Premium tutorial fanpage and active community hub for Opentoonz 2D Animation, covering Rigging, FX, Rendering, Free Raw assets, with an interactive AI-powered live support tutor.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <!-- Background Hitam Kotak Sempurna -->
+  <rect width="512" height="512" fill="#09090b" rx="64"/>
+  
+  <!-- Group Kepala Rubah Kuning Emas Neon -->
+  <g fill="#FFD700" stroke="#09090b" stroke-width="4" stroke-linejoin="round">
+    <!-- Telinga Kiri -->
+    <polygon points="140,160 210,240 130,280"/>
+    <!-- Telinga Kanan -->
+    <polygon points="372,160 302,240 382,280"/>
+    
+    <!-- Pipi & Wajah Bagian Atas -->
+    <polygon points="130,280 256,210 382,280 410,360 256,440 102,360"/>
+  </g>
+  
+  <!-- Aksen Warna Putih (Bulu Pipi Dalam & Sorot Mata) -->
+  <g fill="#ffffff">
+    <polygon points="120,340 180,340 140,370"/>
+    <polygon points="392,340 332,340 372,370"/>
+  </g>
+  
+  <!-- Mata Rubah (Sipit Tajam / Monoline Noir) -->
+  <g fill="#09090b">
+    <polygon points="180,300 230,310 210,325"/>
+    <polygon points="332,300 282,310 302,325"/>
+  </g>
+  
+  <!-- Hidung Hitam -->
+  <polygon points="240,415 272,415 256,435" fill="#09090b"/>
+</svg>
