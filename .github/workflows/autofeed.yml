@@ -1,0 +1,37 @@
+name: Autopilot AI News Feeder
+
+on:
+  schedule:
+    # ⏱️ Otomatis berjalan setiap 4 jam sekali
+    - cron: "0 */4 * * *"
+  workflow_dispatch: # Tombol untuk "Run manual" dari GitHub UI
+
+jobs:
+  run-autofeed:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Repository Code
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python Version
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 📦 Install Required Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install firebase-admin google-genai feedparser
+
+      - name: 🔑 Generate Firebase Credentials File
+        env:
+          FIREBASE_KEY_JSON: ${{ secrets.FIREBASE_KEY_JSON }}
+        run: |
+          echo "$FIREBASE_KEY_JSON" > firebase-key.json
+
+      - name: 🚀 Run AI Autopilot Feeder
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python autofeed.py
