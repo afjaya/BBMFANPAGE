@@ -22,16 +22,11 @@ jobs:
       - name: 📦 Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install firebase-admin google-genai feedparser
-
-      - name: 🔑 Decode Firebase Key
-        env:
-          FIREBASE_KEY_JSON: ${{ secrets.FIREBASE_KEY_JSON }}
-        run: |
-          echo "$FIREBASE_KEY_JSON" | base64 -d > firebase-key.json
+          pip install firebase-admin google-genai python-dotenv
 
       - name: 🚀 Run Animation Feeder
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FIREBASE_KEY_JSON: ${{ secrets.FIREBASE_KEY_JSON }}
         run: |
           python animation_feeder.py
