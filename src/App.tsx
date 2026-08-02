@@ -241,7 +241,7 @@ export default function App() {
                             </div>
                             <span className="text-[10px] font-mono text-zinc-500 whitespace-nowrap">
                               {art.createdAt 
-                                ? new Date(art.createdAt?.toDate ? art.createdAt.toDate() : art.createdAt).toLocaleDateString("id-ID", { day: 'numeric', month: 'short' })
+                                ? new Date(art.createdAt?.toDate ? art.createdAt.toDate() : art.createdAt).toLocaleDateString("en-US", { day: 'numeric', month: 'short' })
                                 : ""}
                             </span>
                           </div>
