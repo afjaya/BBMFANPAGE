@@ -2,29 +2,29 @@ name: Animation Tutorial Feeder Bot
 
 on:
   schedule:
-    # ⏱️ Berjalan 2 kali sehari (Jam 06:00 & 18:00 UTC)
-    - cron: "0 6,18 * * *"
+    # ⏱️ Otomatis berjalan 2x sehari (Jam 07:00 & 17:00 WIB / 00:00 & 10:00 UTC)
+    - cron: "0 0,10 * * *"
   workflow_dispatch: # Tombol Manual Trigger
 
 jobs:
-  run-animation-bot:
+  run-animation-feeder:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📥 Checkout Code
+      - name: 📥 Checkout Repository Code
         uses: actions/checkout@v4
 
-      - name: 🐍 Set up Python
+      - name: 🐍 Set up Python Version
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: 📦 Install Dependencies
+      - name: 📦 Install Required Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install firebase-admin google-genai python-dotenv
+          pip install firebase-admin google-genai feedparser python-dotenv
 
-      - name: 🚀 Run Animation Feeder
+      - name: 🚀 Run Animation Feeder Bot
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           FIREBASE_KEY_JSON: ${{ secrets.FIREBASE_KEY_JSON }}
