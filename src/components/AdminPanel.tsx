@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
 import { collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc, updateDoc } from "firebase/firestore";
-import { Trash2, Edit3, Check, X, Film, Newspaper, Download, RefreshCw, Users, ShieldAlert } from "lucide-react";
+import { Trash2, Edit3, Check, X, Film, Newspaper, Download, RefreshCw, Users, ShieldAlert, BookOpen } from "lucide-react";
 
 export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState<"news" | "video" | "resource" | "manage">("news");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // State Input Form Tambah Baru
+  // State Input Form Tambah Baru (News)
   const [newsTitle, setNewsTitle] = useState("");
   const [newsContent, setNewsContent] = useState("");
   const [newsTag, setNewsTag] = useState("Pengumuman");
@@ -22,6 +22,7 @@ export default function AdminPanel() {
   const [points, setPoints] = useState(""); 
   const [category, setCategory] = useState("ot-basic"); 
 
+  // State Input Resource
   const [resName, setResName] = useState("");
   const [resUrl, setResUrl] = useState("");
   const [resCategory, setResCategory] = useState("Aset Mentah");
@@ -31,6 +32,7 @@ export default function AdminPanel() {
   const [allVideos, setAllVideos] = useState<any[]>([]);
   const [allResources, setAllResources] = useState<any[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]); 
+  const [allTutorials, setAllTutorials] = useState<any[]>([]);
 
   // State Pelacak Data yang Sedang Diedit (Inline Edit)
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -46,16 +48,28 @@ export default function AdminPanel() {
     description: "", 
     points: "" 
   });
+
+  // State Edit Resource
   const [editResourceFields, setEditResourceFields] = useState({ name: "", category: "", url: "" });
   
   // State Edit Member/User status
   const [editUserFields, setEditUserFields] = useState({ role: "member", status: "active" });
 
-  // 1. Tarik Semua Data dari Firebase (Realtime Data)
+  // State Edit Tutorial
+  const [editTutorialFields, setEditTutorialFields] = useState({ title: "", category: "", softwareId: "", excerpt: "" });
+
+  // 1. Tarik Semua Data dari Firebase (Realtime Data Listener)
   useEffect(() => {
     const qNews = query(collection(db, "news"), orderBy("createdAt", "desc"));
     const unsubNews = onSnapshot(qNews, (snap) => {
       setAllNews(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+
+    const qTutorials = query(collection(db, "tutorials"), orderBy("createdAt", "desc"));
+    const unsubTutorials = onSnapshot(qTutorials, (snap) => {
+      setAllTutorials(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, (err) => {
+      console.error("Gagal menarik data tutorials:", err);
     });
 
     const qVid = query(collection(db, "videos"), orderBy("createdAt", "desc"));
@@ -77,6 +91,7 @@ export default function AdminPanel() {
 
     return () => {
       unsubNews();
+      unsubTutorials();
       unsubVid();
       unsubRes();
       unsubUsers();
@@ -173,7 +188,7 @@ export default function AdminPanel() {
         <button type="button" onClick={() => { setActiveTab("news"); setMessage(""); setEditingId(null); }} className={`py-2 text-xs uppercase font-bold border rounded-none ${activeTab === "news" ? "bg-[#FFD700] text-black border-[#FFD700]" : "bg-zinc-900 text-zinc-400 border-white/5 hover:border-white/20"}`}>+ News</button>
         <button type="button" onClick={() => { setActiveTab("video"); setMessage(""); setEditingId(null); }} className={`py-2 text-xs uppercase font-bold border rounded-none ${activeTab === "video" ? "bg-[#FFD700] text-black border-[#FFD700]" : "bg-zinc-900 text-zinc-400 border-white/5 hover:border-white/20"}`}>+ Video</button>
         <button type="button" onClick={() => { setActiveTab("resource"); setMessage(""); setEditingId(null); }} className={`py-2 text-xs uppercase font-bold border rounded-none ${activeTab === "resource" ? "bg-[#FFD700] text-black border-[#FFD700]" : "bg-zinc-900 text-zinc-400 border-white/5 hover:border-white/20"}`}>+ Resource</button>
-        <button type="button" onClick={() => { setActiveTab("manage"); setMessage(""); }} className={`py-2 text-xs uppercase font-bold border rounded-none ${activeTab === "manage" ? "bg-red-600 text-white border-red-600" : "bg-zinc-900 text-red-400 border-white/5 hover:bg-red-950/20"}`}>⚙️ Kelola ({allNews.length + allVideos.length + allResources.length + allUsers.length})</button>
+        <button type="button" onClick={() => { setActiveTab("manage"); setMessage(""); }} className={`py-2 text-xs uppercase font-bold border rounded-none ${activeTab === "manage" ? "bg-red-600 text-white border-red-600" : "bg-zinc-900 text-red-400 border-white/5 hover:bg-red-950/20"}`}>⚙️ Kelola ({allNews.length + allTutorials.length + allVideos.length + allResources.length + allUsers.length})</button>
       </div>
 
       {/* ================= FORM INPUT TAMBAH BARU ================= */}
@@ -349,7 +364,106 @@ export default function AdminPanel() {
             </div>
           </div>
           
-          {/* 2. MANAGEMENT NEWS */}
+          {/* 2. MANAGEMENT TUTORIALS (AI GENERATED ARTICLES) */}
+          <div className="border border-white/5 p-3 bg-zinc-900/20">
+            <h3 className="text-xs font-black text-white bg-zinc-900 px-3 py-1.5 flex items-center gap-2 uppercase tracking-wider border-l-2 border-emerald-500">
+              <BookOpen className="h-3.5 w-3.5 text-emerald-400" /> Kelola Tutorials AI ({allTutorials.length})
+            </h3>
+            <div className="mt-2 divide-y divide-white/5">
+              {allTutorials.length === 0 ? (
+                <p className="text-zinc-500 text-xs py-4 text-center">Belum ada tutorial di koleksi 'tutorials'.</p>
+              ) : (
+                allTutorials.map((tut) => {
+                  const isEditing = editingId === tut.id;
+                  return (
+                    <div key={tut.id} className="py-3 flex flex-col gap-2">
+                      {isEditing ? (
+                        <div className="flex flex-col gap-2 w-full bg-zinc-900 p-2 border border-emerald-500">
+                          <input 
+                            type="text" 
+                            value={editTutorialFields.title} 
+                            onChange={(e) => setEditTutorialFields({ ...editTutorialFields, title: e.target.value })} 
+                            className="bg-zinc-950 text-xs text-white p-1 border border-white/10"
+                            placeholder="Judul Tutorial"
+                          />
+                          <div className="grid grid-cols-2 gap-2">
+                            <input 
+                              type="text" 
+                              value={editTutorialFields.softwareId} 
+                              onChange={(e) => setEditTutorialFields({ ...editTutorialFields, softwareId: e.target.value })} 
+                              className="bg-zinc-950 text-xs text-white p-1 border border-white/10"
+                              placeholder="Software ID (e.g. opentoonz)"
+                            />
+                            <input 
+                              type="text" 
+                              value={editTutorialFields.category} 
+                              onChange={(e) => setEditTutorialFields({ ...editTutorialFields, category: e.target.value })} 
+                              className="bg-zinc-950 text-xs text-white p-1 border border-white/10"
+                              placeholder="Kategori"
+                            />
+                          </div>
+                          <textarea 
+                            value={editTutorialFields.excerpt} 
+                            onChange={(e) => setEditTutorialFields({ ...editTutorialFields, excerpt: e.target.value })} 
+                            rows={2}
+                            className="bg-zinc-950 text-xs text-white p-1 border border-white/10 resize-none"
+                            placeholder="Ringkasan / Excerpt"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="truncate flex-1">
+                            <span className="text-[9px] bg-emerald-950 text-emerald-400 font-mono px-1.5 py-0.5 border border-emerald-800 mr-2 uppercase">
+                              {tut.softwareId || tut.category || "TUTORIAL"}
+                            </span>
+                            <span className="text-xs text-zinc-300 font-bold uppercase">{tut.title}</span>
+                            <p className="text-[10px] text-zinc-500 truncate mt-0.5">{tut.excerpt || tut.description || "Tidak ada ringkasan."}</p>
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex gap-1 justify-end">
+                        {isEditing ? (
+                          <>
+                            <button type="button" onClick={() => handleSaveEdit("tutorials", tut.id, editTutorialFields)} className="p-1.5 bg-emerald-950 text-emerald-400 border border-emerald-900 hover:bg-emerald-600 hover:text-white cursor-pointer"><Check className="h-3.5 w-3.5" /></button>
+                            <button type="button" onClick={() => setEditingId(null)} className="p-1.5 bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-600 hover:text-white cursor-pointer"><X className="h-3.5 w-3.5" /></button>
+                          </>
+                        ) : (
+                          <>
+                            <button 
+                              type="button" 
+                              onClick={() => { 
+                                setEditingId(tut.id); 
+                                setEditTutorialFields({ 
+                                  title: tut.title || "", 
+                                  softwareId: tut.softwareId || "", 
+                                  category: tut.category || "", 
+                                  excerpt: tut.excerpt || tut.description || "" 
+                                }); 
+                              }} 
+                              className="p-1.5 bg-zinc-900 border border-white/5 text-zinc-400 hover:border-emerald-500 hover:text-emerald-500 cursor-pointer"
+                              title="Edit Tutorial"
+                            >
+                              <Edit3 className="h-3.5 w-3.5" />
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={() => handleDelete("tutorials", tut.id)} 
+                              className="p-1.5 bg-red-950/40 border border-red-900/50 text-red-400 hover:bg-red-600 hover:text-white cursor-pointer"
+                              title="Hapus Tutorial"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* 3. MANAGEMENT NEWS */}
           <div className="border border-white/5 p-3 bg-zinc-900/20">
             <h3 className="text-xs font-black text-white bg-zinc-900 px-3 py-1.5 flex items-center gap-2 uppercase tracking-wider border-l-2 border-[#FFD700]">
               <Newspaper className="h-3.5 w-3.5 text-[#FFD700]" /> Kelola Berita ({allNews.length})
@@ -367,8 +481,7 @@ export default function AdminPanel() {
                             onChange={(e) => setEditNewsFields({ ...editNewsFields, tag: e.target.value })} 
                             className="bg-zinc-900 text-xs text-white p-1 border border-white/10 focus:outline-none"
                           >
-                            <option value="Info Penting">Info Penting</option>
-                            <option value="Materi">Materi</option>
+                            <option value="Pengumuman">Pengumuman</option>
                             <option value="Event">Event</option>
                             <option value="Update">Update</option>
                           </select>
@@ -392,7 +505,7 @@ export default function AdminPanel() {
                         <div className="flex items-center justify-between gap-2">
                           <div className="truncate">
                             <span className="text-[9px] bg-zinc-800 text-[#FFD700] font-mono px-1.5 py-0.5 border border-white/5 mr-2 uppercase">
-                              {news.tag || news.category || "Info Penting"}
+                              {news.tag || news.category || "Pengumuman"}
                             </span>
                             <span className="text-xs text-zinc-300 font-bold uppercase font-sans">{news.title}</span>
                           </div>
@@ -403,7 +516,7 @@ export default function AdminPanel() {
                                 setEditingId(news.id); 
                                 setEditNewsFields({ 
                                   title: news.title, 
-                                  tag: news.tag || news.category || "Info Penting",
+                                  tag: news.tag || news.category || "Pengumuman",
                                   content: news.content || "" 
                                 }); 
                               }} 
@@ -437,7 +550,7 @@ export default function AdminPanel() {
             </div>
           </div>
 
-          {/* 3. MANAGEMENT VIDEOS */}
+          {/* 4. MANAGEMENT VIDEOS */}
           <div className="border border-white/5 p-3 bg-zinc-900/20">
             <h3 className="text-xs font-black text-white bg-zinc-900 px-3 py-1.5 flex items-center gap-2 uppercase tracking-wider border-l-2 border-[#FFD700]">
               <Film className="h-3.5 w-3.5 text-[#FFD700]" /> Kelola Video Teater ({allVideos.length})
@@ -468,19 +581,21 @@ export default function AdminPanel() {
                           <input type="text" value={editVideoFields.duration} onChange={(e) => setEditVideoFields({ ...editVideoFields, duration: e.target.value })} className="col-span-1 bg-zinc-950 text-xs text-white p-1 border border-white/10" placeholder="Durasi" />
                           <input type="text" value={editVideoFields.url} onChange={(e) => setEditVideoFields({ ...editVideoFields, url: e.target.value })} className="col-span-2 bg-zinc-950 text-xs text-white p-1 border border-white/10" placeholder="URL YouTube" />
                         </div>
-                        <textarea value={editVideoFields.description} onChange={(e) => setEditVideoFields({ ...editVideoFields, description: e.target.value })} className="w-full bg-zinc-950 text-xs text-white p-1 border border-white/10" placeholder="Deskripsi" rows={2} />
-                        <input type="text" value={editVideoFields.points} onChange={(e) => setEditVideoFields({ ...editVideoFields, points: e.target.value })} className="w-full bg-zinc-950 text-xs text-white p-1 border border-white/10" placeholder="Poin-poin dipisah koma" />
+                        <textarea value={editVideoFields.description} onChange={(e) => setEditVideoFields({ ...editVideoFields, description: e.target.value })} rows={2} className="w-full bg-zinc-950 text-xs text-white p-1 border border-white/10 resize-none" placeholder="Deskripsi" />
+                        <input type="text" value={editVideoFields.points} onChange={(e) => setEditVideoFields({ ...editVideoFields, points: e.target.value })} className="w-full bg-zinc-950 text-xs text-white p-1 border border-white/10" placeholder="Poin-poin (pisahkan koma)" />
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between gap-2 w-full">
-                        <div className="truncate">
-                          <span className="text-[8px] bg-zinc-800 text-[#FFD700] px-1.5 py-0.5 rounded mr-2 uppercase font-black">{vid.category || "ot-basic"}</span>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="truncate flex-1">
+                          <span className="text-[9px] bg-zinc-800 text-[#FFD700] font-mono px-1.5 py-0.5 border border-white/5 mr-2 uppercase">
+                            {vid.category || "VIDEO"}
+                          </span>
                           <span className="text-xs text-zinc-300 font-bold uppercase">{vid.title}</span>
-                          <p className="text-[9px] text-zinc-500 truncate">{vid.url}</p>
+                          <p className="text-[10px] text-zinc-500 truncate mt-0.5">{vid.description || vid.url}</p>
                         </div>
                       </div>
                     )}
-                    <div className="flex gap-1 justify-end items-center mt-1">
+                    <div className="flex gap-1 justify-end">
                       {isEditing ? (
                         <>
                           <button type="button" onClick={() => handleSaveEdit("videos", vid.id, editVideoFields)} className="p-1.5 bg-emerald-950 text-emerald-400 border border-emerald-900 hover:bg-emerald-600 hover:text-white cursor-pointer"><Check className="h-3.5 w-3.5" /></button>
@@ -488,18 +603,24 @@ export default function AdminPanel() {
                         </>
                       ) : (
                         <>
-                          <button type="button" onClick={() => { 
-                            setEditingId(vid.id); 
-                            setEditVideoFields({ 
-                              title: vid.title, 
-                              url: vid.url,
-                              category: vid.category || "ot-basic",
-                              level: vid.level || "PEMULA",
-                              duration: vid.duration || "",
-                              description: vid.description || "",
-                              points: vid.points ? vid.points.join(", ") : ""
-                            }); 
-                          }} className="p-1.5 bg-zinc-900 border border-white/5 text-zinc-400 hover:border-[#FFD700] hover:text-[#FFD700] cursor-pointer"><Edit3 className="h-3.5 w-3.5" /></button>
+                          <button 
+                            type="button" 
+                            onClick={() => { 
+                              setEditingId(vid.id); 
+                              setEditVideoFields({ 
+                                title: vid.title || "", 
+                                url: vid.url || "", 
+                                category: vid.category || "ot-basic", 
+                                level: vid.level || "PEMULA", 
+                                duration: vid.duration || "", 
+                                description: vid.description || "", 
+                                points: Array.isArray(vid.points) ? vid.points.join(", ") : vid.points || "" 
+                              }); 
+                            }} 
+                            className="p-1.5 bg-zinc-900 border border-white/5 text-zinc-400 hover:border-[#FFD700] hover:text-[#FFD700] cursor-pointer"
+                          >
+                            <Edit3 className="h-3.5 w-3.5" />
+                          </button>
                           <button type="button" onClick={() => handleDelete("videos", vid.id)} className="p-1.5 bg-red-950/40 border border-red-900/50 text-red-400 hover:bg-red-600 hover:text-white cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></button>
                         </>
                       )}
@@ -510,56 +631,68 @@ export default function AdminPanel() {
             </div>
           </div>
 
-          {/* 4. MANAGEMENT RESOURCES */}
+          {/* 5. MANAGEMENT RESOURCES */}
           <div className="border border-white/5 p-3 bg-zinc-900/20">
             <h3 className="text-xs font-black text-white bg-zinc-900 px-3 py-1.5 flex items-center gap-2 uppercase tracking-wider border-l-2 border-[#FFD700]">
-              <Download className="h-3.5 w-3.5 text-[#FFD700]" /> Kelola Resources Mentahan ({allResources.length})
+              <Download className="h-3.5 w-3.5 text-[#FFD700]" /> Kelola Resources Asset ({allResources.length})
             </h3>
             <div className="mt-2 divide-y divide-white/5">
-              {allResources.length === 0 ? (
-                <p className="text-zinc-500 text-xs py-4 text-center">Belum ada resource mentahan di database.</p>
-              ) : (
-                allResources.map((res) => {
-                  const isEditing = editingId === res.id;
-                  return (
-                    <div key={res.id} className="py-3 flex flex-col md:flex-row md:items-center justify-between gap-2">
-                      {isEditing ? (
-                        <div className="flex-1 flex gap-2 w-full">
-                          <select value={editResourceFields.category} onChange={(e) => setEditResourceFields({ ...editResourceFields, category: e.target.value })} className="bg-zinc-900 text-xs text-white p-1 border border-white/10 focus:outline-none">
-                            <option value="Aset Mentah">Aset Mentah</option>
-                            <option value="Palette">Palette</option>
-                            <option value="Rigging">Rigging</option>
-                            <option value="Background">Background</option>
-                          </select>
-                          <input type="text" value={editResourceFields.name} onChange={(e) => setEditResourceFields({ ...editResourceFields, name: e.target.value })} className="bg-zinc-900 text-xs text-white p-1 border border-[#FFD700] flex-1 focus:outline-none" placeholder="Nama resource..." />
-                          <input type="url" value={editResourceFields.url} onChange={(e) => setEditResourceFields({ ...editResourceFields, url: e.target.value })} className="bg-zinc-900 text-xs text-white p-1 border border-white/10 flex-1 focus:outline-none" placeholder="URL Link..." />
-                        </div>
-                      ) : (
-                        <div className="truncate flex-1">
-                          <span className="text-[9px] bg-zinc-800 text-[#FFD700] px-1.5 py-0.5 rounded mr-2 uppercase font-black">{res.category || "Aset Mentah"}</span>
-                          <span className="text-xs text-zinc-300 font-bold uppercase">{res.name}</span>
-                          <p className="text-[9px] text-zinc-500 truncate mt-0.5 pl-1">{res.url || "Tidak ada URL"}</p>
-                        </div>
-                      )}
-                      <div className="flex gap-1 justify-end items-center">
-                        {isEditing ? (
-                          <>
-                            <button type="button" onClick={() => handleSaveEdit("resources", res.id, editResourceFields)} className="p-1.5 bg-emerald-950 text-emerald-400 border border-emerald-900 hover:bg-emerald-600 hover:text-white cursor-pointer"><Check className="h-3.5 w-3.5" /></button>
-                            <button type="button" onClick={() => setEditingId(null)} className="p-1.5 bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-600 hover:text-white cursor-pointer"><X className="h-3.5 w-3.5" /></button>
-                          </>
-                        ) : (
-                          <>
-                            <button type="button" onClick={() => { setEditingId(res.id); setEditResourceFields({ name: res.name, category: res.category || "Aset Mentah", url: res.url || "" }); }} className="p-1.5 bg-zinc-900 border border-white/5 text-zinc-400 hover:border-[#FFD700] hover:text-[#FFD700] cursor-pointer"><Edit3 className="h-3.5 w-3.5" /></button>
-                            <button type="button" onClick={() => handleDelete("resources", res.id)} className="p-1.5 bg-red-950/40 border border-red-900/50 text-red-400 hover:bg-red-600 hover:text-white cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></button>
-                          </>
-                        )}
+              {allResources.map((res) => {
+                const isEditing = editingId === res.id;
+                return (
+                  <div key={res.id} className="py-3 flex items-center justify-between gap-2">
+                    {isEditing ? (
+                      <div className="flex-1 flex flex-wrap gap-2 bg-zinc-900 p-2 border border-[#FFD700]">
+                        <input type="text" value={editResourceFields.name} onChange={(e) => setEditResourceFields({ ...editResourceFields, name: e.target.value })} className="bg-zinc-950 text-xs text-white p-1 border border-white/10 flex-1" placeholder="Nama Asset" />
+                        <select value={editResourceFields.category} onChange={(e) => setEditResourceFields({ ...editResourceFields, category: e.target.value })} className="bg-zinc-950 text-xs text-white p-1 border border-white/10">
+                          <option value="Aset Mentah">Aset Mentah</option>
+                          <option value="Palette">Color Palette Preset</option>
+                          <option value="Rigging">Kumpulan Bone Rigging</option>
+                          <option value="Background">Scene Background</option>
+                        </select>
+                        <input type="text" value={editResourceFields.url} onChange={(e) => setEditResourceFields({ ...editResourceFields, url: e.target.value })} className="bg-zinc-950 text-xs text-white p-1 border border-white/10 w-full" placeholder="Link Download" />
                       </div>
+                    ) : (
+                      <div className="truncate flex-1">
+                        <span className="text-[9px] bg-zinc-800 text-[#FFD700] font-mono px-1.5 py-0.5 border border-white/5 mr-2 uppercase">
+                          {res.category || "RESOURCE"}
+                        </span>
+                        <span className="text-xs text-zinc-300 font-bold uppercase">{res.name}</span>
+                        <p className="text-[10px] text-zinc-500 truncate mt-0.5">{res.url}</p>
+                      </div>
+                    )}
+                    <div className="flex gap-1 justify-end shrink-0">
+                      {isEditing ? (
+                        <>
+                          <button type="button" onClick={() => handleSaveEdit("resources", res.id, editResourceFields)} className="p-1.5 bg-emerald-950 text-emerald-400 border border-emerald-900 hover:bg-emerald-600 hover:text-white cursor-pointer"><Check className="h-3.5 w-3.5" /></button>
+                          <button type="button" onClick={() => setEditingId(null)} className="p-1.5 bg-zinc-800 text-zinc-400 border border-zinc-700 hover:bg-zinc-600 hover:text-white cursor-pointer"><X className="h-3.5 w-3.5" /></button>
+                        </>
+                      ) : (
+                        <>
+                          <button 
+                            type="button" 
+                            onClick={() => { 
+                              setEditingId(res.id); 
+                              setEditResourceFields({ 
+                                name: res.name || "", 
+                                category: res.category || "Aset Mentah", 
+                                url: res.url || "" 
+                              }); 
+                            }} 
+                            className="p-1.5 bg-zinc-900 border border-white/5 text-zinc-400 hover:border-[#FFD700] hover:text-[#FFD700] cursor-pointer"
+                          >
+                            <Edit3 className="h-3.5 w-3.5" />
+                          </button>
+                          <button type="button" onClick={() => handleDelete("resources", res.id)} className="p-1.5 bg-red-950/40 border border-red-900/50 text-red-400 hover:bg-red-600 hover:text-white cursor-pointer"><Trash2 className="h-3.5 w-3.5" /></button>
+                        </>
+                      )}
                     </div>
-                  );
-                })
-              )}
+                  </div>
+                );
+              })}
             </div>
           </div>
+
         </div>
       )}
     </div>
