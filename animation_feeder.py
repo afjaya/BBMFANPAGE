@@ -1,5 +1,6 @@
 import os
 import json
+import re
 import time
 from dotenv import load_dotenv
 import firebase_admin
@@ -42,6 +43,14 @@ SOFTWARES = [
 ]
 
 # ---------------------------------------------------------------------------
+# HELPER: CLEAN & PARSE JSON FROM GEMINI TEXT
+# ---------------------------------------------------------------------------
+def parse_gemini_json(raw_text: str) -> dict:
+    """Membersihkan wrapper Markdown ```json dari output Gemini lalu parse ke JSON object"""
+    cleaned_text = re.sub(r"```json\s*|\s*```", "", raw_text).strip()
+    return json.loads(cleaned_text)
+
+# ---------------------------------------------------------------------------
 # 3. FUNCTION: GENERATE & FEED TUTORIALS (SEARCH GROUNDING + FULL ENGLISH)
 # ---------------------------------------------------------------------------
 def feed_tutorials():
@@ -56,30 +65,32 @@ def feed_tutorials():
         1. Everything MUST be strictly in ENGLISH.
         2. DO NOT repeat the summary/excerpt in the content body.
         3. The 'content' field must be a rich 400-600 word step-by-step tutorial (Prerequisites, Step 1, Step 2, Pro Tips).
+        4. Output ONLY the raw JSON object. Do NOT wrap it in any conversational text.
 
-        Return ONLY a valid JSON object matching this schema:
+        Return JSON matching this exact schema:
         {{
             "title": "Clear Actionable Title (e.g. Advanced Rigging: Smart Bones Setup in Moho)",
             "softwareId": "{sw}",
             "category": "Rigging & Controls",
             "excerpt": "A brief 2-sentence summary of what animators will accomplish.",
             "content": "Step-by-step tutorial breakdown containing detailed instructions, shortcuts, and keyframe setups.",
-            "source_url": "https://cgchannel.com"
+            "source_url": "[https://cgchannel.com](https://cgchannel.com)"
         }}
         """
 
         try:
-            # Menggunakan Google Search Grounding agar AI mencari sumber riil di internet
+            # Catatan: response_mime_type Sengaja Dihapus agar Google Search Grounding Berjalan Lancar
             response = client.models.generate_content(
                 model="gemini-2.5-flash",
                 contents=prompt,
                 config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
                     tools=[{"google_search": {}}],
                     temperature=0.3
                 )
             )
-            data = json.loads(response.text)
+            
+            # Parsing aman dari text response
+            data = parse_gemini_json(response.text)
             
             # Memastikan sinkronisasi field 'description' untuk kompatibilitas UI
             if "excerpt" in data and "description" not in data:
@@ -109,8 +120,9 @@ def feed_news():
     CRITICAL INSTRUCTIONS:
     1. Everything MUST be strictly in ENGLISH.
     2. Write a professional industry news breakdown.
+    3. Output ONLY the raw JSON object. Do NOT wrap it in any conversational text.
 
-    Return ONLY a valid JSON object matching this schema:
+    Return JSON matching this exact schema:
     {
         "title": "Compelling English News Headline",
         "category": "Industry News",
@@ -121,16 +133,18 @@ def feed_news():
     """
 
     try:
+        # Catatan: response_mime_type Sengaja Dihapus agar Google Search Grounding Berjalan Lancar
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
-                response_mime_type="application/json",
                 tools=[{"google_search": {}}],
                 temperature=0.3
             )
         )
-        data = json.loads(response.text)
+        
+        # Parsing aman dari text response
+        data = parse_gemini_json(response.text)
         
         if "excerpt" in data and "description" not in data:
             data["description"] = data["excerpt"]
