@@ -3,7 +3,7 @@ name: Autopilot AI News Feeder
 on:
   schedule:
     # ⏱️ Otomatis berjalan setiap 4 jam sekali
-    - cron: "0 */4 * * *"
+    - cron: "0 */5 * * *"
   workflow_dispatch:
 
 jobs:
