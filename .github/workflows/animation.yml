@@ -28,5 +28,7 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           FIREBASE_KEY_JSON: ${{ secrets.FIREBASE_KEY_JSON }}
+          VITE_GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          VITE_FIREBASE_KEY_JSON: ${{ secrets.FIREBASE_KEY_JSON }}
         run: |
           python animation_feeder.py

@@ -191,7 +191,7 @@ export default function App() {
 
                         {selectedArticle.source_url && (
                           <div className="mt-8 pt-4 border-t border-zinc-800 text-[11px] font-mono text-zinc-500 flex justify-between items-center">
-                            <span>Source: AI News Portal</span>
+                            <span>Source: News Portal</span>
                             <a 
                               href={selectedArticle.source_url} 
                               target="_blank" 

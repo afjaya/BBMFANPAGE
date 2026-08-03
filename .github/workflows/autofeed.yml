@@ -2,7 +2,7 @@ name: Autopilot AI News Feeder
 
 on:
   schedule:
-    # ⏱️ Otomatis berjalan setiap 4 jam sekali
+    # ⏱️ Otomatis berjalan setiap 5 jam sekali
     - cron: "0 */5 * * *"
   workflow_dispatch:
 
@@ -22,16 +22,13 @@ jobs:
       - name: 📦 Install Required Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install firebase-admin google-genai feedparser
-
-      - name: 🔑 Generate Firebase Credentials File
-        env:
-          FIREBASE_KEY_JSON: ${{ secrets.FIREBASE_KEY_JSON }}
-        run: |
-          echo "$FIREBASE_KEY_JSON" | base64 -d > firebase-key.json
+          pip install firebase-admin google-genai feedparser python-dotenv
 
       - name: 🚀 Run AI Autopilot Feeder
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          FIREBASE_KEY_JSON: ${{ secrets.FIREBASE_KEY_JSON }}
+          VITE_GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          VITE_FIREBASE_KEY_JSON: ${{ secrets.FIREBASE_KEY_JSON }}
         run: |
           python autofeed.py

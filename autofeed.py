@@ -22,8 +22,12 @@ db = firestore.client()
 
 # 2. Inisialisasi SDK Gemini Terbaru (google-genai)
 # ✅ Membaca dari Environment Variable (Aman dari deteksi GitHub)
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-ai_client = genai.Client(api_key=GEMINI_API_KEY)
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("VITE_GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    raise ValueError("⚠️ GEMINI_API_KEY missing in environment variables!")
+
+client = genai.Client(api_key=GEMINI_API_KEY)
+
 
 # 3. Sumber RSS Feed Berita AI Global
 RSS_FEEDS = [
@@ -39,7 +43,7 @@ def generate_article(prompt, retries=3):
     
     for attempt in range(retries):
         try:
-            response = ai_client.models.generate_content(
+            response = client.models.generate_content(
                 model=model_name,
                 contents=prompt,
                 config={'response_mime_type': 'application/json'}
