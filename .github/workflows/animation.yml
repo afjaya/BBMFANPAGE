@@ -32,25 +32,3 @@ jobs:
           VITE_FIREBASE_KEY_JSON: ${{ secrets.FIREBASE_KEY_JSON }}
         run: |
           python animation_feeder.py
-
-      - name: 📧 Send Email Notification
-        if: always() # Tetap terkirim meskipun ada step yang error
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.gmail.com
-          server_port: 465
-          secure: true
-          username: ${{ secrets.EMAIL_USERNAME }}
-          password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "🚀 Bot Feeder Report: Status (${{ job.status }})"
-          to: afjayabali26@gmail.com
-          from: "Bang Bro Animation Feeder Bot"
-          body: |
-            Halo Bosku! 
-
-            Bot Animation Feeder telah selesai menjalankan tugasnya.
-
-            📌 Detail Eksekusi:
-            - Status: ${{ job.status }}
-            - Repository: ${{ github.repository }}
-            - Triggered by: ${{ github.event_name }}
