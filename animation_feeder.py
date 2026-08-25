@@ -19,11 +19,20 @@ if not firebase_admin._apps:
         cred = credentials.Certificate("firebase-key.json")
     else:
         key_json = os.environ.get("FIREBASE_KEY_JSON", "")
+        if not key_json:
+            raise ValueError("⚠️ FIREBASE_KEY_JSON missing in environment variables!")
         cred = credentials.Certificate(json.loads(key_json))
-    firebase_admin.initialize_app(cred)
+    
+    # Masukkan project_id dari service account JSON agar client Firestore tidak bingung
+    cred_dict = json.loads(key_json) if not os.path.exists("firebase-key.json") else {}
+    project_id = cred_dict.get("project_id")
+    
+    firebase_admin.initialize_app(cred, {
+        'projectId': project_id
+    } if project_id else {})
 
+# Inisialisasi Firestore client secara eksplisit
 db = firestore.client()
-
 # ---------------------------------------------------------------------------
 # 2. INITIALIZE GEMINI API CLIENT
 # ---------------------------------------------------------------------------
@@ -46,9 +55,15 @@ SOFTWARES = [
 # HELPER: CLEAN & PARSE JSON FROM GEMINI TEXT
 # ---------------------------------------------------------------------------
 def parse_gemini_json(raw_text: str) -> dict:
-    """Membersihkan wrapper Markdown ```json dari output Gemini lalu parse ke JSON object"""
+    """Membersihkan wrapper Markdown dan control character dari output Gemini lalu parse ke JSON object"""
+    # 1. Hapus wrapper Markdown ```json ... ```
     cleaned_text = re.sub(r"```json\s*|\s*```", "", raw_text).strip()
-    return json.loads(cleaned_text)
+    
+    # 2. Hapus control characters (kecuali newline/tab standar yang valid dalam format text)
+    cleaned_text = re.sub(r'[\x00-\x09\x0b\x0c\x0e-\x1f\x7f]', '', cleaned_text)
+    
+    # 3. Parse JSON dengan strict=False untuk mentolerir newline tak ter-escape di dalam string
+    return json.loads(cleaned_text, strict=False)
 
 # ---------------------------------------------------------------------------
 # 3. FUNCTION: GENERATE & FEED TUTORIALS (SEARCH GROUNDING + FULL ENGLISH)
